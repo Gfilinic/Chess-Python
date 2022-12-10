@@ -21,4 +21,6 @@ class Movement():
     
     def getNumberLetters(self,row,column):
         return self.columsToLetters[column] + self.rowsToNumber[row]
+    
+   
 

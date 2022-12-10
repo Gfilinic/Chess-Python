@@ -65,6 +65,9 @@ def checkEventsAndUpdatetheBoard(active,screen,boardState,clock):
             return active
         elif e.type==p.MOUSEBUTTONDOWN:
             checkTheMouseClickAndMakeAMove(boardState)
+        elif e.type==p.KEYDOWN:
+            if e.key==p.K_z:
+                boardState.undoMove()
                 
     drawBoard(screen,boardState)
     clock.tick(Max_FPS)

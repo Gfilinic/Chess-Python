@@ -19,3 +19,10 @@ class BoardState():
         self.board[move.endRow][move.endColumn] = move.pieceMovedFrom
         self.moveLog.append(move)
         self.whiteTurn= not self.whiteTurn
+        
+    def undoMove(self):
+        if len(self.moveLog)!=0:
+            move=self.moveLog.pop()
+            self.board[move.startRow][move.startColumn] = move.pieceMovedFrom
+            self.board[move.endRow][move.endColumn] = move.pieceMovedTo
+            self.whiteTurn = not self.whiteTurn
