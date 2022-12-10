@@ -7,7 +7,8 @@ DIMENSIONS=8
 SqSize= HEIGHT // DIMENSIONS    
 Max_FPS=10
 Models={}
-
+selectedSquare=()
+playerClicks=[]
 
 def loadModels():
     chessPieces=['wP','wR','wN','wB','wK','wQ','bP','bR','bN','bB','bK','bQ']
@@ -37,44 +38,48 @@ def setUpScreen():
     screen.fill(p.Color("white"))
     return screen
 
-
+def checkTheMouseClickAndMakeAMove(boardState):
+    global selectedSquare,playerClicks
+    location=p.mouse.get_pos()
+    selectedColumn=location[0]//SqSize
+    selectedRow=location[1]//SqSize
     
+    if selectedSquare==(selectedRow,selectedColumn):
+        selectedSquare=()
+        playerClicks=[]
+    else:
+        selectedSquare=(selectedRow,selectedColumn)
+        playerClicks.append(selectedSquare)
+
+    if len(playerClicks)==2:
+        move = Game.Movement(playerClicks[0],playerClicks[1],boardState.board)
+        print(move.getChessNotation())
+        boardState.makeMove(move)
+        selectedSquare=()
+        playerClicks=[]
+
+def checkEventsAndUpdatetheBoard(active,screen,boardState,clock):
+    for e in p.event.get():
+        if e.type==p.QUIT:
+            active=False
+            return active
+        elif e.type==p.MOUSEBUTTONDOWN:
+            checkTheMouseClickAndMakeAMove(boardState)
+                
+    drawBoard(screen,boardState)
+    clock.tick(Max_FPS)
+    p.display.flip()
 
 def main():
     screen=setUpScreen()
     clock=p.time.Clock()
     boardState=Game.BoardState()
+    
     loadModels()
     active=True
-    selectedSquare=()
-    playerClicks=[]
     while active:
-       for e in p.event.get():
-        if e.type==p.QUIT:
-            active=False
-        elif e.type==p.MOUSEBUTTONDOWN:
-            location=p.mouse.get_pos()
-            selectedColumn=location[0]//SqSize
-            selectedRow=location[1]//SqSize
-            
-            if selectedSquare==(selectedRow,selectedColumn):
-                selectedSquare=()
-                playerClicks=[]
-            else:
-                selectedSquare=(selectedRow,selectedColumn)
-                playerClicks.append(selectedSquare)
-
-            if len(playerClicks)==2:
-                move = Game.Movement(playerClicks[0],playerClicks[1],boardState.board)
-                print(move.getChessNotation())
-                boardState.makeMove(move)
-                selectedSquare=()
-                playerClicks=[]
-
-
-        drawBoard(screen,boardState)
-        clock.tick(Max_FPS)
-        p.display.flip()
+        checkEventsAndUpdatetheBoard(active,screen,boardState,clock)
+       
     
 if __name__=="__main__":
     main()
