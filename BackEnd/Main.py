@@ -49,8 +49,14 @@ def checkTheMouseClickAndMakeAMove(boardState):
         playerClicks=[]
     else:
         selectedSquare=(selectedRow,selectedColumn)
-        playerClicks.append(selectedSquare)
-        validMoves = boardState.getValidMoves()
+        if len(playerClicks)==0:
+            if boardState.board[selectedRow][selectedColumn]!="__":
+                playerClicks.append(selectedSquare)
+                validMoves = boardState.getValidMoves()
+        else:
+            playerClicks.append(selectedSquare)
+            validMoves = boardState.getValidMoves()
+            
 
     if len(playerClicks)==2:
         move = Game.Movement(playerClicks[0],playerClicks[1],boardState.board)
@@ -72,14 +78,12 @@ def checkEventsAndUpdatetheBoard(active,screen,boardState,clock):
             return active
         elif e.type == p.MOUSEBUTTONDOWN:
             checkTheMouseClickAndMakeAMove(boardState)
-            print("Movement made: " + str(flagMove))
         elif e.type == p.KEYDOWN:
             if e.key == p.K_z:
                 boardState.undoMove()
                 flagMove = True
     
     if flagMove:
-        print("Promjena zastave")
         print(boardState.whiteTurn)    
         validMoves = boardState.getValidMoves()
         flagMove = False
