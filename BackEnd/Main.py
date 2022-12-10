@@ -2,6 +2,9 @@ import pygame as p
 import Game
 
 p.init()
+p.display.set_caption('Chess')
+Icon = p.image.load('BackEnd\Models\icon.png')
+p.display.set_icon(Icon)
 WIDTH=HEIGHT=512
 DIMENSIONS=8
 SqSize= HEIGHT // DIMENSIONS    
@@ -10,6 +13,7 @@ Models={}
 selectedSquare=()
 playerClicks=[]
 flagMove = False
+
 def loadModels():
     chessPieces=['wP','wR','wN','wB','wK','wQ','bP','bR','bN','bB','bK','bQ']
     for piece in chessPieces:
@@ -66,8 +70,10 @@ def checkTheMouseClickAndMakeAMove(boardState):
             boardState.makeMove(move)
             flagMove = True
             print(move.getChessNotation())
-        selectedSquare=()
-        playerClicks=[]
+            selectedSquare=()
+            playerClicks=[]
+        else:
+            playerClicks=[selectedSquare]
          
 
 def checkEventsAndUpdatetheBoard(active,screen,boardState,clock):
@@ -84,7 +90,6 @@ def checkEventsAndUpdatetheBoard(active,screen,boardState,clock):
                 flagMove = True
     
     if flagMove:
-        print(boardState.whiteTurn)    
         validMoves = boardState.getValidMoves()
         flagMove = False
                

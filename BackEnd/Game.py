@@ -38,7 +38,6 @@ class BoardState():
     def getPawnMoves(self,row,column,moves):
         
         if self.whiteTurn:
-            print("White turn!")
             if self.board[row - 1][column]=="__":
                 moves.append(Movement((row,column), (row - 1,column), self.board))
                 if row == 6 and self.board[row - 2][column]=="__":
@@ -51,7 +50,6 @@ class BoardState():
                     moves.append(Movement((row,column),(row - 1,column + 1), self.board))
     
         else:
-            print("Black turn!")
             if self.board[row + 1][column]=="__":
                 moves.append(Movement((row,column), (row + 1,column), self.board))
                 if row == 1 and self.board[row + 2][column]=="__":
@@ -67,22 +65,71 @@ class BoardState():
         return moves 
 
     def getRookMoves(self,row,column,moves):
-        pass
+        possibleDirections = ((0,1),(1,0),(0,-1),(-1,0))
+        enemyColor = "b" if self.whiteTurn else "w"
+        for d in possibleDirections:
+            for i in range(1,8):
+                endRow = row + d[0] * i
+                endColumn = column +d[1] * i
+                if 0 <= endRow < 8 and 0 <= endColumn < 8:
+                    endPiece = self.board[endRow][endColumn]
+                    if endPiece == "__":
+                        moves.append(Movement((row,column),(endRow,endColumn),self.board))
+                    elif endPiece[0] == enemyColor:
+                        moves.append(Movement((row,column),(endRow,endColumn),self.board))
+                        break
+                    else:
+                        break
+                else:
+                    break
     
     def getKnightMoves(self,row,column,moves):
-        pass
+        possibleKnightMoves = ((2, 1), (2, -1), (1, 2), (1, -2), (-1, 2),(-1, -2),(-2, 1),(-2, -1))
+        enemyColor = "b" if self.whiteTurn else "w"
+        for move in possibleKnightMoves:
+            endRow = row + move[0] 
+            endColumn = column + move[1] 
+            if 0 <= endRow < 8 and 0 <= endColumn < 8:
+                endPiece = self.board[endRow][endColumn]
+                if endPiece[0] == enemyColor or endPiece == "__":
+                    moves.append(Movement((row,column),(endRow,endColumn),self.board))
     
     def getBishopMoves(self,row,column,moves):
-        pass
+        possibleDirections = ((1,1),(1,-1),(-1,1),(-1,-1))
+        enemyColor = "b" if self.whiteTurn else "w"
+        for d in possibleDirections:
+            for i in range(1,8):
+                endRow = row + d[0] * i
+                endColumn = column +d[1] * i
+                if 0 <= endRow < 8 and 0 <= endColumn < 8:
+                    endPiece = self.board[endRow][endColumn]
+                    if endPiece == "__":
+                        moves.append(Movement((row,column),(endRow,endColumn),self.board))
+                    elif endPiece[0] == enemyColor:
+                        moves.append(Movement((row,column),(endRow,endColumn),self.board))
+                        break
+                    else:
+                        break
+                else:
+                    break
     
-    def getQueenMoves(self,row,column,moves):
-        pass
+    def getQueenMoves(self, row, column, moves):
+        self.getRookMoves(row, column, moves)
+        self.getBishopMoves(row, column, moves)
     
     def getKingMoves(self,row,column,moves):
-        pass
+        possibleKingMoves=((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1))
+        enemyColor = "b" if self.whiteTurn else "w"
+        for i in range (8):
+            endRow = row + possibleKingMoves[i][0]
+            endColumn = column + possibleKingMoves[i][1]
+            if 0 <= endRow < 8 and 0 <= endColumn < 8:
+                endPiece = self.board[endRow][endColumn]
+                if endPiece[0] == enemyColor or endPiece == "__":
+                    moves.append(Movement((row,column),(endRow,endColumn),self.board))
+                 
     
     def getAllPossibleMoves(self):
-        print("generating all moves!")
         moves=[]
         for row in range(len(self.board)):
             for column in range(len(self.board[row])):
