@@ -9,7 +9,7 @@ Max_FPS=10
 Models={}
 selectedSquare=()
 playerClicks=[]
-
+flagMove = False
 def loadModels():
     chessPieces=['wP','wR','wN','wB','wK','wQ','bP','bR','bN','bB','bK','bQ']
     for piece in chessPieces:
@@ -50,25 +50,40 @@ def checkTheMouseClickAndMakeAMove(boardState):
     else:
         selectedSquare=(selectedRow,selectedColumn)
         playerClicks.append(selectedSquare)
+        validMoves = boardState.getValidMoves()
 
     if len(playerClicks)==2:
         move = Game.Movement(playerClicks[0],playerClicks[1],boardState.board)
-        print(move.getChessNotation())
-        boardState.makeMove(move)
+        
+        if move in validMoves:
+            global flagMove
+            boardState.makeMove(move)
+            flagMove = True
+            print(move.getChessNotation())
         selectedSquare=()
         playerClicks=[]
+         
 
 def checkEventsAndUpdatetheBoard(active,screen,boardState,clock):
+    global flagMove
     for e in p.event.get():
         if e.type==p.QUIT:
             active=False
             return active
-        elif e.type==p.MOUSEBUTTONDOWN:
+        elif e.type == p.MOUSEBUTTONDOWN:
             checkTheMouseClickAndMakeAMove(boardState)
-        elif e.type==p.KEYDOWN:
-            if e.key==p.K_z:
+            print("Movement made: " + str(flagMove))
+        elif e.type == p.KEYDOWN:
+            if e.key == p.K_z:
                 boardState.undoMove()
-                
+                flagMove = True
+    
+    if flagMove:
+        print("Promjena zastave")
+        print(boardState.whiteTurn)    
+        validMoves = boardState.getValidMoves()
+        flagMove = False
+               
     drawBoard(screen,boardState)
     clock.tick(Max_FPS)
     p.display.flip()
@@ -77,7 +92,7 @@ def main():
     screen=setUpScreen()
     clock=p.time.Clock()
     boardState=Game.BoardState()
-    
+    #validMoves = boardState.getValidMoves()
     loadModels()
     active=True
     while active:
