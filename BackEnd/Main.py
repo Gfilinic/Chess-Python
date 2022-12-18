@@ -19,7 +19,7 @@ def loadModels():
         Models[piece]=p.transform.scale(p.image.load("BackEnd\Models\\"+piece+".png"),(SqSize,SqSize)) 
 
 def drawSquares(screen):
-    colors=[p.Color("light gray"),p.Color("crimson")]
+    colors=[p.Color("light gray"),p.Color("#999999")]
     for row in range(DIMENSIONS):
         for column in range(DIMENSIONS):
             color=colors[((row+column)%2)]
