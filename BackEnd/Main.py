@@ -63,8 +63,9 @@ def checkTheMouseClickAndMakeAMove(boardState):
         move = Game.Movement(playerClicks[0],playerClicks[1],boardState.board)
         validMoves = boardState.getValidMoves()
         for i in range(len(validMoves)):
-            if move.moveID == validMoves[i].moveID:
+            if move == validMoves[i]:
                 move = validMoves[i]
+        
         if move in validMoves:
             boardState.makeMove(move)
             print(move.getChessNotation())

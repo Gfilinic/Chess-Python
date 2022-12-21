@@ -23,7 +23,10 @@ class BoardState():
         self.checkMate = False
         self.staleMate = False
         self.enPassantPossible = ()
-            
+        self.currentCastlingRights = CastlingRights(True,True,True,True)
+        self.castleRightLog = [CastlingRights(self.currentCastlingRights.wKside, self.currentCastlingRights.bKside, 
+                                              self.currentCastlingRights.wQside, self.currentCastlingRights.bQside)] 
+
     def makeMove(self,move):
         
         self.board[move.startRow][move.startColumn] = "__"
@@ -47,6 +50,19 @@ class BoardState():
         else:
             self.enPassantPossible = ()
 
+        if move.isCastleMove:
+            if move.endColumn - move.startColumn == 2:
+                self.board[move.endRow][move.endColumn - 1] = self.board[move.endRow][move.endColumn + 1]
+                self.board[move.endRow][move.endColumn + 1] = "__"
+            else:
+                self.board[move.endRow][move.endColumn + 1] = self.board[move.endRow][move.endColumn - 2]
+                self.board[move.endRow][move.endColumn - 2] = "__"
+
+        self.updateCastlingRights(move)
+        self.castleRightLog.append(CastlingRights(self.currentCastlingRights.wKside, self.currentCastlingRights.bKside, 
+                                              self.currentCastlingRights.wQside, self.currentCastlingRights.bQside)) 
+        
+
 
            
     def undoMove(self):
@@ -69,7 +85,35 @@ class BoardState():
             if move.pieceMovedFrom[1] == 'P' and (move.startRow - move.endRow) == 2:
                 self.enPassantPossible = ()
 
-            
+            self.castleRightLog.pop()
+            self.currentCastlingRights = self.castleRightLog[-1]
+            if move.isCastleMove:
+                if move.endColumn - move.startColumn == 2:
+                    self.board[move.endRow][move.endColumn + 1] = self.board[move.endRow][move.endColumn - 1]
+                    self.board[move.endRow][move.endColumn - 1] = "__"
+                else:
+                    self.board[move.endRow][move.endColumn - 2] = self.board[move.endRow][move.endColumn + 1]
+                    self.board[move.endRow][move.endColumn + 1] = "__"
+
+
+    def updateCastlingRights(self,move):
+        if move.pieceMovedFrom == 'wK':
+            self.currentCastlingRights.wKside = False  
+            self.currentCastlingRights.wQside = False
+        elif move.pieceMovedFrom == "bK":
+            self.currentCastlingRights.bKside = False
+            self.currentCastlingRights.bQside = False
+        elif move.pieceMovedFrom == "wR":
+            if move.startRow == 7:
+                if move.startColumn == 0:
+                    self.currentCastlingRights.wQside = False
+                elif move.startColumn == 7:
+                    self.currentCastlingRights.wKside = False
+            elif move.startRow == 0:
+                if move.startColumn == 0:
+                    self.currentCastlingRights.bQside = False
+                elif move.startCOlumn == 7:
+                    self.currentCastlingRights.bKside = False
     
     def checkForPinsAndChecks(self):
         pins = []
@@ -126,10 +170,11 @@ class BoardState():
 
     def getValidMoves(self):
         tempEnPassantPossible = self.enPassantPossible
+        tempCastlingRights = CastlingRights(self.currentCastlingRights.wKside, self.currentCastlingRights.bKside, self.currentCastlingRights.wQside, self.currentCastlingRights.bQside)
         moves = []
         self.inCheck, self.checks, self.pins = self.checkForPinsAndChecks()
         if self.whiteTurn:
-            kingRow = self.whiteKingLocation[0]
+            kingRow = self.whiteKingLocation[0] 
             kingColumn = self.whiteKingLocation[1]
         else: 
             kingRow = self.blackKingLocation[0]
@@ -172,6 +217,13 @@ class BoardState():
             self.staleMate = False
 
         self.enPassantPossible = tempEnPassantPossible
+        self.currentCastlingRights = tempCastlingRights
+
+        if self.whiteTurn:
+            self.getCastleMoves(self.whiteKingLocation[0], self.whiteKingLocation[1], moves)
+        else:
+            self.getCastleMoves(self.blackKingLocation[0], self.blackKingLocation[1], moves)
+
         return moves
                                     
     def getPawnMoves(self,row,column,moves):
@@ -336,7 +388,36 @@ class BoardState():
                         self.whiteKingLocation = (row, column)
                     else: 
                         self.blackKingLocation = (row, column)
-                 
+    
+    def getCastleMoves(self, row, column, moves):
+        if self.inCheck:
+            return
+        if (self.whiteTurn and self.currentCastlingRights.wKside) or (not self.whiteTurn and self.currentCastlingRights.bKside):
+            self.getKingsideCastleMoves(row, column, moves)
+        if (self.whiteTurn and self.currentCastlingRights.wQside) or (not self.whiteTurn and self.currentCastlingRights.bQside):
+            self.getQueensideCastleMoves(row, column, moves)
+
+    def getKingsideCastleMoves(self, row, column, moves):
+        if self.board[row][column + 1] == "__" and self.board[row][column +2] == "__":
+            if not self.squareUnderAttack(row, column + 1) and not self.squareUnderAttack(row, column + 2):
+                moves.append(Movement((row, column), (row, column + 2), self.board, isCastleMove = True))
+
+    def getQueensideCastleMoves(self, row, column, moves):
+        if self.board[row][column - 1] == "__" and self.board[row][column - 2] == "__" and self.board[row][column - 3] == "__":
+            if not self.squareUnderAttack(row, column - 1) and not self.squareUnderAttack(row, column - 2):
+                moves.append(Movement((row, column), (row, column - 2), self.board, isCastleMove = True))
+
+        
+    
+    def squareUnderAttack(self, row, column):
+        self.whiteTurn = not self.whiteTurn
+        opponentMoves = self.getAllPossibleMoves()
+        self.whiteTurn = not self.whiteTurn
+        for move in opponentMoves:
+            if move.endRow == row and move.endColumn == column:
+                return True
+
+        return False
     def getAllPossibleMoves(self):
         moves=[]
         for row in range(len(self.board)):
@@ -346,7 +427,14 @@ class BoardState():
                     piece=self.board[row][column][1]
                     self.moveFunctions[piece](row,column,moves)
         return moves                
-        
+
+class CastlingRights():
+    def __init__(self, wKside, bKside, wQside, bQside ):
+        self.wKside = wKside
+        self.bKside = bKside
+        self.wQside = wQside
+        self.bQside = bQside
+
 class Movement():
     
     numberToRows={"1" : 7, "2" : 6, "3" : 5, "4" : 4, "5" : 3, "6" : 2, "7" : 1, "8" : 0 }
@@ -354,7 +442,7 @@ class Movement():
     lettersToColumns={"A" : 0, "B" : 1, "C" : 2, "D" : 3, "E" : 4, "F" : 5, "G" : 6, "H" : 7}
     columsToLetters={v: k for k,v in lettersToColumns.items()}  
 
-    def __init__(self,startSquare,endSquare,board, isEnpassantMove = False):
+    def __init__(self,startSquare,endSquare,board, isEnpassantMove = False, isCastleMove = False):
         self.startRow=startSquare[0]
         self.startColumn=startSquare[1]
         self.endRow=endSquare[0]
@@ -364,7 +452,9 @@ class Movement():
         self.isPawnPromotion = (self.pieceMovedFrom == "wP" and self.endRow == 0) or (self.pieceMovedFrom == "bP" and self.endRow == 7)
         self.isEnpassantMove = isEnpassantMove
         if self.isEnpassantMove:
-            self.pieceMovedTo = "wP" if self.pieceMovedFrom == "bP" else "bP"        
+            self.pieceMovedTo = "wP" if self.pieceMovedFrom == "bP" else "bP"
+
+        self.isCastleMove = isCastleMove
         self.moveID = self.startRow * 1000 + self.startColumn * 100 + self.endRow * 10 + self.endColumn
         
          
