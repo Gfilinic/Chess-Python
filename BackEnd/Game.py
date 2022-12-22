@@ -208,10 +208,8 @@ class BoardState():
         if len(moves) == 0:
             if self.inCheck:
                 self.checkMate = True
-                print("Check Mate!")
             else:
                 self.staleMate = True
-                print("Stale Mate!")
         else:
             self.checkMate = False
             self.staleMate = False
@@ -418,6 +416,7 @@ class BoardState():
                 return True
 
         return False
+
     def getAllPossibleMoves(self):
         moves=[]
         for row in range(len(self.board)):
@@ -428,6 +427,8 @@ class BoardState():
                     self.moveFunctions[piece](row,column,moves)
         return moves                
 
+
+    
 class CastlingRights():
     def __init__(self, wKside, bKside, wQside, bQside ):
         self.wKside = wKside
@@ -454,6 +455,7 @@ class Movement():
         if self.isEnpassantMove:
             self.pieceMovedTo = "wP" if self.pieceMovedFrom == "bP" else "bP"
 
+        self.isCapture = self.pieceMovedTo != "__"
         self.isCastleMove = isCastleMove
         self.moveID = self.startRow * 1000 + self.startColumn * 100 + self.endRow * 10 + self.endColumn
         
@@ -464,8 +466,24 @@ class Movement():
         return False    
 
     
+
     def getChessNotation(self):
-        return self.getNumberLetters(self.startRow,self.startColumn) + "->" + self.getNumberLetters(self.endRow,self.endColumn)
+        return self.getNumberLetters(self.startRow,self.startColumn) + " -> " + self.getNumberLetters(self.endRow,self.endColumn)
     
     def getNumberLetters(self,row,column):
         return self.columsToLetters[column] + self.rowsToNumber[row]
+
+    def __str__(self):
+        if self.isCastleMove:
+            return "O-O" if self.endColumn == 6 else "O-O-O"
+        endSquare = self.getChessNotation()
+        if self.pieceMovedFrom[1]=="P":
+            if self.isCapture:
+                return "X" + self.getChessNotation() 
+            else:
+                return endSquare
+
+        moveString = self.pieceMovedFrom[1] +"."
+        if self.isCapture:
+            moveString += "x"
+        return moveString + endSquare
