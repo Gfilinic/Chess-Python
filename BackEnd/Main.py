@@ -18,6 +18,19 @@ def loadModels():
     for piece in chessPieces:
         Models[piece]=p.transform.scale(p.image.load("BackEnd\Models\\"+piece+".png"),(SqSize,SqSize)) 
 
+def highlightMoves(screen, boardState, validMoves, sqSelected):
+    if sqSelected != ():
+        row, column = sqSelected
+        if boardState.board[row][column][0] == ("w" if  boardState.whiteTurn else "b"):
+            s = p.Surface((SqSize,SqSize))
+            s.set_alpha(100)
+            s.fill(p.Color('yellow'))
+            screen.blit(s, (column * SqSize, row * SqSize))
+            s.fill(p.Color('brown'))
+            for move in validMoves:
+                if move.startRow == row and move.startColumn == column:
+                    screen.blit(s, (move.endColumn * SqSize, move.endRow * SqSize))
+
 def drawSquares(screen):
     colors=[p.Color("light gray"),p.Color("#999999")]
     for row in range(DIMENSIONS):
@@ -32,8 +45,9 @@ def drawPieces(screen,board):
             if piece != '__':
                 screen.blit(Models[piece],p.Rect(column*SqSize,row*SqSize,SqSize,SqSize))    
 
-def drawBoard(screen,boardState):
+def drawBoard(screen,boardState, validMoves, sqSelected):
     drawSquares(screen)
+    highlightMoves(screen, boardState, validMoves, sqSelected)
     drawPieces(screen,boardState.board)
 
 def setUpScreen():
@@ -86,7 +100,8 @@ def checkEventsAndUpdatetheBoard(active,screen,boardState,clock):
         elif e.type == p.KEYDOWN:
             if e.key == p.K_z:
                 boardState.undoMove()
-    drawBoard(screen,boardState)
+    validMoves = boardState.getValidMoves()
+    drawBoard(screen,boardState, validMoves, selectedSquare )
     clock.tick(Max_FPS)
     p.display.flip()
     
