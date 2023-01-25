@@ -1,9 +1,5 @@
-import ZODB
-from persistent import Persistent
-
-class BoardState( Persistent ):
+class BoardState():
     def __init__(self):
-
         self.board=[
             ['bR','bN','bB','bQ','bK','bB','bN','bR'],
             ['bP','bP','bP','bP','bP','bP','bP','bP'],

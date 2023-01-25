@@ -1,5 +1,9 @@
 import pygame as p
 import Game
+from ZODB import FileStorage, DB
+from persistent import Persistent
+from ZEO.ClientStorage import ClientStorage
+from persistent.list import PersistentList
 
 p.init()
 p.display.set_caption('Chess')
@@ -15,11 +19,12 @@ Models={}
 selectedSquare=()
 playerClicks=[]
 boardState=Game.BoardState()
+gameLobby = 0
 
 def loadModels():
     chessPieces=['wP','wR','wN','wB','wK','wQ','bP','bR','bN','bB','bK','bQ']
     for piece in chessPieces:
-        Models[piece]=p.transform.scale(p.image.load("BackEnd\Models\\"+piece+".png"),(SqSize,SqSize)) 
+        Models[piece]=p.transform.scale(p.image.load("Models\\"+piece+".png"),(SqSize,SqSize)) 
 
 def highlightMoves(screen, boardState, validMoves):
     if selectedSquare != ():
@@ -115,6 +120,7 @@ def checkTheMouseClickAndMakeAMove(boardState, screen, clock):
         
         if move in validMoves:
             boardState.makeMove(move)
+            global gameLobby
             animeteMove(boardState.moveLog[-1], screen, boardState.board, clock)
             print(move.getChessNotation())
             selectedSquare=()
@@ -185,7 +191,12 @@ def animeteMove(move, screen, boardState, clock):
         p.display.flip()
         clock.tick(60)
 
-def main():
+def main(lobby, player, adress, port):
+    from GameLobby import GameLobby
+    global gameLobby
+    gameLobby = GameLobby(lobby, boardState, adress, port)
+    gameLobby.openSession()
+    print(" lobby, players ", lobby, player)
     screen=setUpScreen()
     clock=p.time.Clock()
     loadModels()
@@ -195,4 +206,13 @@ def main():
        
     
 if __name__=="__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-l", "--lobby", required=True, help="Game lobby name")
+    parser.add_argument("-p", "--player", required=True, help="Player name")
+    parser.add_argument( "-a", "--adress", const=True, nargs='?', type=str, help="Adress of the ZEO server.", default="localhost" )
+    parser.add_argument( "--port", const=True, nargs='?', type=int, help="Port ZEO server", default=2709 )
+    args = parser.parse_args()
+    
+    main(args.lobby, args.player, args.adress, args.port)
+    
