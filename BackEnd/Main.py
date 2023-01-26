@@ -7,7 +7,8 @@ from persistent.list import PersistentList
 
 p.init()
 p.display.set_caption('Chess')
-Icon = p.image.load('BackEnd\Models\icon.png')
+Icon = p.image.load("D:\Documents\Faks\Diplomski\TBP\ChessManBackup\ChessMan\BackEnd\Models\icon.png")
+
 p.display.set_icon(Icon)
 BOARD_WIDTH=BOARD_HEIGHT=512
 MOVE_LOG_PANEL_WIDTH = 350
@@ -120,11 +121,17 @@ def checkTheMouseClickAndMakeAMove(boardState, screen, clock):
         
         if move in validMoves:
             boardState.makeMove(move)
+            #SendMessageToZODB(move)
+            
             global gameLobby
-            animeteMove(boardState.moveLog[-1], screen, boardState.board, clock)
+            gameLobby.sendMove(move)
+            print("MoveLog iz CheckUpdate funkcije: ", gameLobby.checkUpdates())
+            animateMove(boardState.moveLog[-1], screen, boardState.board, clock)
             print(move.getChessNotation())
+            
             selectedSquare=()
             playerClicks=[]
+
         else:
             playerClicks=[selectedSquare]
             
@@ -171,7 +178,7 @@ def checkEventsAndUpdatetheBoard(active,screen,clock):
     p.display.flip()
     
 
-def animeteMove(move, screen, boardState, clock):
+def animateMove(move, screen, boardState, clock):
     global colors
     coords = []
     deltaRow = move.endRow - move.startRow
@@ -194,8 +201,9 @@ def animeteMove(move, screen, boardState, clock):
 def main(lobby, player, adress, port):
     from GameLobby import GameLobby
     global gameLobby
-    gameLobby = GameLobby(lobby, boardState, adress, port)
-    gameLobby.openSession()
+    print ("Argumenti : ", lobby, player, adress, port)
+    gameLobby = GameLobby(lobby, boardState, player, adress, port)
+    gameLobby.openSession(lobby)
     print(" lobby, players ", lobby, player)
     screen=setUpScreen()
     clock=p.time.Clock()
