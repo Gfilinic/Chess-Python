@@ -23,7 +23,8 @@ class GameLobby(Persistent):
         self.bp = DB( self.storage )
         self.connection = self.bp.open()
         
-        self.lobby = self.openSession(name)
+        self.session = self.openSession(name)
+        self.lobby = zeoClient(name)
         
         self.uthread = threading.Thread( target=self.checkUpdates )
         self.uthread.start()
