@@ -8,7 +8,6 @@ import Main
 import transaction
 import threading
 import sys, time
-T = 0 # globalna varijabla
 
 class GameLobby(Persistent):
     def __init__(self, name, boardState, player, adress, port):
@@ -16,7 +15,8 @@ class GameLobby(Persistent):
         self.boardState = boardState  
         self.players = []
         self.players.append(player)
-        self.moveLog = [] 
+        self.move_log = []
+        self.last_processed_move = 0
         
         self.storage = ClientStorage.ClientStorage( ( adress, port ) )
         self.bp = DB( self.storage )
@@ -41,32 +41,48 @@ class GameLobby(Persistent):
             transaction.commit()
         session = session[ lobby ]
         return session
+    
+    def joinSession(self, lobby, player):
+        root = self.connection.root()
+        session = root['session']
+        if len(self.players) < 2:
+            self.players.append(player)
+            transaction.commit()
+        else:
+            print("The lobby is full, please try again later.")
+        if lobby in session.keys():
+            self.lobby = session[lobby]
+            self.players.append(player)
+            transaction.commit()
+            print(f"{player} has joined the lobby {lobby}")
+        else:
+            print(f"Error: {lobby} not found")
+            
+    
+    def sendMove(self, move):
+        while True:
+            try:
+                t = transaction.get()
+                self.move_log.append(move)
+                t.commit()
+            except ConflictError or ValueError:
+                    t.abort()
+                    time.sleep(1)
+                    pass
+            else:
+                break
 
     def checkUpdates( self ):
         self.active = True
         while self.active:
             self.connection.sync()
-            global T
-            if self.moveLog != []:
-                for T2, move in self.moveLog.items():
-                    if T2 > T:
-                        self.moveLog.append( move )
-                        T = T2
-            return self.moveLog
+            if len(self.move_log) > self.last_processed_move:
+                last_move = self.move_log[-1]
+                self.playMoveOpponent(self.boardState, last_move)
+                with open("Database\output.txt", "a") as file:
+                    file.write(str(last_move) + ", ")
+                self.last_processed_move = len(self.move_log)
+
+    def playMoveOpponent(self, boardState, move):
+        boardState.makeMove(move)
             
-    def sendMove(self, move):
-        while True:
-            try:    
-                t = transaction.get()
-                now = time.time()
-                self.moveLog[ now ] = move
-                t.commit()
-            except ConflictError or ValueError:
-                t.abort()
-                time.sleep( 1 )
-                pass
-            else:
-                break
-
-
-

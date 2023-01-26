@@ -4,10 +4,10 @@ from ZODB import FileStorage, DB
 from persistent import Persistent
 from ZEO.ClientStorage import ClientStorage
 from persistent.list import PersistentList
-
+from GameLobby import GameLobby
 p.init()
 p.display.set_caption('Chess')
-Icon = p.image.load("D:\Documents\Faks\Diplomski\TBP\ChessManBackup\ChessMan\BackEnd\Models\icon.png")
+Icon = p.image.load("BackEnd\Models\icon.png")
 
 p.display.set_icon(Icon)
 BOARD_WIDTH=BOARD_HEIGHT=512
@@ -25,7 +25,7 @@ gameLobby = 0
 def loadModels():
     chessPieces=['wP','wR','wN','wB','wK','wQ','bP','bR','bN','bB','bK','bQ']
     for piece in chessPieces:
-        Models[piece]=p.transform.scale(p.image.load("Models\\"+piece+".png"),(SqSize,SqSize)) 
+        Models[piece]=p.transform.scale(p.image.load("BackEnd\Models\\"+piece+".png"),(SqSize,SqSize)) 
 
 def highlightMoves(screen, boardState, validMoves):
     if selectedSquare != ():
@@ -124,14 +124,15 @@ def checkTheMouseClickAndMakeAMove(boardState, screen, clock):
             #SendMessageToZODB(move)
             
             global gameLobby
+            boardState.whiteTurn = not boardState.whiteTurn
             gameLobby.sendMove(move)
-            print("MoveLog iz CheckUpdate funkcije: ", gameLobby.checkUpdates())
+            
             animateMove(boardState.moveLog[-1], screen, boardState.board, clock)
             print(move.getChessNotation())
             
             selectedSquare=()
             playerClicks=[]
-
+            
         else:
             playerClicks=[selectedSquare]
             
@@ -199,11 +200,7 @@ def animateMove(move, screen, boardState, clock):
         clock.tick(60)
 
 def main(lobby, player, adress, port):
-    from GameLobby import GameLobby
-    global gameLobby
-    print ("Argumenti : ", lobby, player, adress, port)
-    gameLobby = GameLobby(lobby, boardState, player, adress, port)
-    gameLobby.openSession(lobby)
+   
     print(" lobby, players ", lobby, player)
     screen=setUpScreen()
     clock=p.time.Clock()
@@ -221,6 +218,13 @@ if __name__=="__main__":
     parser.add_argument( "-a", "--adress", const=True, nargs='?', type=str, help="Adress of the ZEO server.", default="localhost" )
     parser.add_argument( "--port", const=True, nargs='?', type=int, help="Port ZEO server", default=2709 )
     args = parser.parse_args()
-    
-    main(args.lobby, args.player, args.adress, args.port)
+    zeoClient = connectToServer(args.address, args.port)
+    if zeoClient.exists(args.lobby):
+        gameLobby = GameLobby(args.lobby, boardState, args.player, args.adress, args.port)
+        gameLobby.joinSession(args.lobby)
+        main(args.lobby, args.player, args.adress, args.port)
+    else:
+        gameLobby = GameLobby(args.lobby, boardState, args.player, args.adress, args.port)
+        gameLobby.openSession(args.lobby)
+        main(args.lobby, args.player, args.adress, args.port)
     
