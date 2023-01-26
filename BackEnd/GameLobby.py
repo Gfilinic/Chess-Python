@@ -4,7 +4,8 @@ from ZEO import ClientStorage
 from persistent.list import PersistentList
 from ZODB.POSException import ConflictError
 from BTrees import OOBTree
-import Main
+import socket
+#import Main
 import transaction
 import threading
 import sys, time
@@ -23,6 +24,7 @@ class GameLobby(Persistent):
         self.connection = self.bp.open()
         
         self.lobby = self.openSession(name)
+        
         self.uthread = threading.Thread( target=self.checkUpdates )
         self.uthread.start()
         
@@ -37,7 +39,7 @@ class GameLobby(Persistent):
 		
         if not lobby in session.keys():
             print( 'Creating new lobby:', lobby )
-            session[ lobby ] = lobby
+            session[ lobby ] = zeoClient(lobby)
             transaction.commit()
         session = session[ lobby ]
         return session
@@ -59,11 +61,32 @@ class GameLobby(Persistent):
             print(f"Error: {lobby} not found")
             
     
+    def checkUpdates( self ):
+        self.active = True
+        while self.active:
+            self.connection.sync()
+            moves = self.lobby.newTurns()
+            for move in moves:
+                self.move_log.append(move)
+                print("Dodan move: ",str(move))		
+        time.sleep( 1 )
+        
+    def sendMoveToServer(self,move, event=None):
+        self.lobby.sendMove(move)
+
+
+T = 1          
+class zeoClient:
+    def __init__(self,  lobbyName):
+        self.moveLog=OOBTree.OOBTree()
+        self.lobbyName = lobbyName
+
+        
     def sendMove(self, move):
         while True:
             try:
                 t = transaction.get()
-                self.move_log.append(move)
+                self.moveLog[T] = move
                 t.commit()
             except ConflictError or ValueError:
                     t.abort()
@@ -71,18 +94,17 @@ class GameLobby(Persistent):
                     pass
             else:
                 break
+    
+    def newTurns(self):
+        global T
+        moves = []
+        for T2, move in self.moveLog.items():
+            if T2 > T:
+                moves.append( move )
+                T = T2
+        return moves
+        
 
-    def checkUpdates( self ):
-        self.active = True
-        while self.active:
-            self.connection.sync()
-            if len(self.move_log) > self.last_processed_move:
-                last_move = self.move_log[-1]
-                self.playMoveOpponent(self.boardState, last_move)
-                with open("Database\output.txt", "a") as file:
-                    file.write(str(last_move) + ", ")
-                self.last_processed_move = len(self.move_log)
+        
+    
 
-    def playMoveOpponent(self, boardState, move):
-        boardState.makeMove(move)
-            

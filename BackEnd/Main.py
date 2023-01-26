@@ -1,10 +1,13 @@
 import pygame as p
 import Game
+import socket
 from ZODB import FileStorage, DB
 from persistent import Persistent
 from ZEO.ClientStorage import ClientStorage
 from persistent.list import PersistentList
 from GameLobby import GameLobby
+
+
 p.init()
 p.display.set_caption('Chess')
 Icon = p.image.load("BackEnd\Models\icon.png")
@@ -20,7 +23,7 @@ Models={}
 selectedSquare=()
 playerClicks=[]
 boardState=Game.BoardState()
-gameLobby = 0
+
 
 def loadModels():
     chessPieces=['wP','wR','wN','wB','wK','wQ','bP','bR','bN','bB','bK','bQ']
@@ -120,12 +123,13 @@ def checkTheMouseClickAndMakeAMove(boardState, screen, clock):
                 move = validMoves[i]
         
         if move in validMoves:
+            global gameLobby
+            gameLobby.sendMoveToServer(move)
             boardState.makeMove(move)
             #SendMessageToZODB(move)
             
-            global gameLobby
             boardState.whiteTurn = not boardState.whiteTurn
-            gameLobby.sendMove(move)
+           
             
             animateMove(boardState.moveLog[-1], screen, boardState.board, clock)
             print(move.getChessNotation())
@@ -208,7 +212,9 @@ def main(lobby, player, adress, port):
     active=True
     while active:
         checkEventsAndUpdatetheBoard(active,screen,clock)
-       
+
+
+
     
 if __name__=="__main__":
     import argparse
@@ -218,13 +224,9 @@ if __name__=="__main__":
     parser.add_argument( "-a", "--adress", const=True, nargs='?', type=str, help="Adress of the ZEO server.", default="localhost" )
     parser.add_argument( "--port", const=True, nargs='?', type=int, help="Port ZEO server", default=2709 )
     args = parser.parse_args()
-    zeoClient = connectToServer(args.address, args.port)
-    if zeoClient.exists(args.lobby):
-        gameLobby = GameLobby(args.lobby, boardState, args.player, args.adress, args.port)
-        gameLobby.joinSession(args.lobby)
-        main(args.lobby, args.player, args.adress, args.port)
-    else:
-        gameLobby = GameLobby(args.lobby, boardState, args.player, args.adress, args.port)
-        gameLobby.openSession(args.lobby)
-        main(args.lobby, args.player, args.adress, args.port)
+    
+    
+    gameLobby = GameLobby(args.lobby, boardState, args.player, args.adress, args.port)
+        
+    main(args.lobby, args.player, args.adress, args.port)
     
