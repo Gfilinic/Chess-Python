@@ -33,6 +33,7 @@ class BoardState():
         self.board[move.startRow][move.startColumn] = "__"
         self.board[move.endRow][move.endColumn] = move.pieceMovedFrom
         self.moveLog.append(move)
+        
         self.turnNumber+=1
         self.whiteTurn = not self.whiteTurn
         if move.pieceMovedFrom == "wK":
@@ -138,7 +139,7 @@ class BoardState():
                 endRow = kingStartRow + d[0] * j
                 endColumn = kingStartColumn +d[1] * j
                 if 0 <= endRow < 8 and 0 <= endColumn < 8:
-                    endPiece = self.board[endRow][endColumn]
+                    endPiece = self.board.board[endRow][endColumn]
                     if endPiece[0] == allyColour and endPiece[1] != 'K':
                         if possiblePin == ():
                             possiblePin = (endRow, endColumn, d[0], d[1])
@@ -406,7 +407,8 @@ class BoardState():
             if not self.squareUnderAttack(row, column - 1) and not self.squareUnderAttack(row, column - 2):
                 moves.append(Movement((row, column), (row, column - 2), self.board, isCastleMove = True))
 
-        
+    def defineColour(self, color):
+        self.myColour = color
     
     def squareUnderAttack(self, row, column):
         self.whiteTurn = not self.whiteTurn

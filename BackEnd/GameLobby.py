@@ -9,6 +9,7 @@ import transaction
 import threading
 import sys, time
 
+timeout=10
 class GameState(Persistent):
     def __init__(self, lobbyName, boardState, player_name):
         self.board = boardState
@@ -27,7 +28,7 @@ class GameLobby():
         self.client = client
         self.running = True
         self.gameState = gameState
-        
+        self.gameOver = False
         
         
     def start(self):
@@ -42,21 +43,26 @@ class GameLobby():
             self.my_turn=False
         
     def checkTurn(self):
-        while self.running and self.gameState.ready:
-            if self.my_turn:
-                return True
-            else:
+        start_time = time.time()
+        if self.my_turn:
+            return True
+        else:
+            if time.time() - start_time > timeout:
+                print("timeout")
                 return False
+            time.sleep(0.5)
             
     def checkIfGameActive(self):
-       return (self.running and self.gameState.ready)
+       return not self.gameOver
         
     def update_MyGameState(self):
         self.gameState = self.client.send(msg="get_game", data=self.gameState.lobbyName, return_response=True)
-        self.my_turn = not self.my_turn
+        
         
     def get_GameState(self):
         self.gameState = self.client.send(msg="get_game", data=self.gameState.lobbyName, return_response=True)
-        
+        self.boardState.board = self.gameState
+        newBoard = self.boardState
+        return newBoard
         
     

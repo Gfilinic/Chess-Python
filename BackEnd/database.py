@@ -19,7 +19,8 @@ class Database:
             try:
                 transaction.begin()
                 try:
-                    self.root['lobbies'][boardState.lobbyName].board = boardState.board
+                    self.root['lobbies'][boardState.lobbyName] = boardState.board
+                 
                 except Exception as e:
                     print("Error:", str(e))
                 transaction.commit()

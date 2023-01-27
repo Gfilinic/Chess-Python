@@ -123,16 +123,18 @@ def checkTheMouseClickAndMakeAMove(boardState, screen, clock):
         
         if move in validMoves:
             
+            if move.pieceMovedFrom[0]==boardState.myColour:
             #gameLobby.sendMoveToServer(move)
-            boardState.makeMove(move)
-            #SendMessageToZODB(move)
-            gameLobby.update_MyGameState()
-            
-            animateMove(boardState.moveLog[-1], screen, boardState.board, clock)
-            print(move.getChessNotation())
-            
-            selectedSquare=()
-            playerClicks=[]
+                boardState.makeMove(move)
+                #SendMessageToZODB(move)
+                gameLobby.client.send(msg="update_board", data=boardState, return_response=False)
+
+                
+                animateMove(boardState.moveLog[-1], screen, boardState.board, clock)
+                print(move.getChessNotation())
+                
+                selectedSquare=()
+                playerClicks=[]
             
         else:
             playerClicks=[selectedSquare]
@@ -147,7 +149,7 @@ def drawText(screen, text):
 
 def checkForGameOver(boardState, screen):
     if boardState.checkMate:
-        if boardState.whiteTurn:
+        if boardState.whiteTurn:    
             drawText(screen, "Black wins by checkmate")
             return True
         else:
@@ -158,6 +160,7 @@ def checkForGameOver(boardState, screen):
 
 def checkEventsAndUpdatetheBoard(active,screen,clock):
     global boardState
+    
     if (gameLobby.checkTurn()):
         for e in p.event.get():
             if e.type==p.QUIT:
@@ -167,14 +170,23 @@ def checkEventsAndUpdatetheBoard(active,screen,clock):
                 checkTheMouseClickAndMakeAMove(boardState,screen,clock)
                
     else:
-        gameLobby.get_GameState()
+        p.time.wait(500) # pause for 500 milliseconds
+        newboardState = gameLobby.get_GameState()
         
-        
+        if (newboardState.board!=boardState.board):
+            newMove = newboardState.board.moveLog[-1]
+            boardState.makeMove(newMove)
+            animateMove(boardState.moveLog[-1], screen, boardState.board, clock)
+            print(newMove.getChessNotation())
+    
     validMoves = boardState.getValidMoves()
     drawBoard(screen,boardState, validMoves )
     checkForGameOver(boardState, screen)
     clock.tick(Max_FPS)
-    p.display.flip()
+    p.display.flip()   
+        
+        
+    
 
 
 def animateMove(move, screen, boardState, clock):
@@ -209,11 +221,12 @@ def main(gameLobby):
     while active:
         active = gameLobby.checkIfGameActive()
         checkEventsAndUpdatetheBoard(active,screen,clock)
-
+       
 def create_game(playerName):
     new_lobby = GameState(args.lobby,boardState, playerName)
     gameLobby = GameLobby(client, new_lobby, boardState, white_player=True)
     client.send(msg="insert_new_game", data=new_lobby, return_response=False)
+    boardState.defineColour("w")
     return gameLobby
    
     
@@ -222,6 +235,7 @@ def join_game(lobby, playerName):
         client.send(msg="set_game_ready", data=lobby, return_response=False)
         lobbyToJoin = GameState(lobby, boardState, playerName)
         gameLobby = GameLobby(client, lobbyToJoin, boardState, white_player=False)
+        boardState.defineColour("b")
         return gameLobby
  
         
