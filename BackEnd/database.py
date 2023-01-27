@@ -56,10 +56,10 @@ class Database:
     def insert_new_game(self, gameLobby):
         transaction.begin()
         try:
-            self.root['lobbies'][gameLobby.name] = gameLobby
+            self.root['lobbies'][gameLobby] = gameLobby
         except KeyError:
             self.root['lobbies'] = PersistentDict()
-            self.root['lobbies'][gameLobby.name] = gameLobby
+            self.root['lobbies'][gameLobby] = gameLobby
         transaction.commit()
 
     def get_user(self, username):
@@ -101,6 +101,14 @@ class Database:
         except KeyError:
             return
         transaction.commit()
+    
+    def get_ready(self, lobbyName):
+        self.db_connection.sync()
+        try:
+            return self.root['lobbies'][lobbyName].ready
+        except KeyError:
+            return
+        
 
     def set_winner(self, username):
         transaction.begin()

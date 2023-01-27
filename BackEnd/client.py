@@ -7,7 +7,7 @@ from request import Request
 class Client:
     def __init__(self):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.host = "10.0.1.18"
+        self.host = "localhost"
         self.port = 2701
         self.address = (self.host, self.port)
         self.connect()

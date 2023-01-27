@@ -5,7 +5,7 @@ from ZODB import FileStorage, DB
 from persistent import Persistent
 from ZEO.ClientStorage import ClientStorage
 from persistent.list import PersistentList
-from GameLobby import GameLobby
+from GameLobby import GameLobby, GameState
 from client import Client
 
 p.init()
@@ -216,8 +216,19 @@ def main(lobby, player):
     while active:
         checkEventsAndUpdatetheBoard(active,screen,clock)
 
-
-
+def create_game(lobbyName, playerName):
+    client.send(msg="insert_new_game", data=lobbyName, return_response=False)
+    new_lobby = GameState(args.lobby,boardState, playerName)
+    gameLobby = GameLobby(client, new_lobby, boardState, white_player=True)
+    gameLobby.start()
+    
+    
+def join_game(game, playerName):
+        client.send(msg="set_game_ready", data=game, return_response=False)
+        lobbyToJoin = GameState(client, game, playerName)
+        gameLobby = GameLobby(client, lobbyToJoin, boardState, white_player=False)
+        gameLobby.start()
+        
     
 if __name__=="__main__":
     global client
@@ -232,14 +243,15 @@ if __name__=="__main__":
     
     global gameLobby
     
-    gameLobby = GameLobby(args.lobby, boardState, args.player, client)
+   
     response = client.send(msg="get_game", data=args.lobby, return_response=True)
     if response:
-        client.send(msg="set_game_ready", data=args.lobby)
-        print("Uspio si brale!!!")
+        join_game(args.lobby, args.player)
+        main(args.lobby, args.player)
+        
+        
     else:
-        client.send(msg="insert_new_game", data=args.lobby, return_response=False)
-        gameLobby.start()
+        create_game(args.lobby, args.player)
+        main(args.lobby, args.player)
     
-    main(args.lobby, args.player)
     

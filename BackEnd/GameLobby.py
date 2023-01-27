@@ -9,24 +9,31 @@ import transaction
 import threading
 import sys, time
 
+class GameState(Persistent):
+    def __init__(self, lobbyName, boardState, player_name):
+        self.board = boardState
+        self.lobbyName = lobbyName
+        self.ready = False
+        self.player_name = player_name
 
 
-class GameLobby(Persistent):
-    def __init__(self, name, boardState, player, client):
-        self.name = name
+class GameLobby():
+    def __init__(self, client, gameState, boardState, white_player):
+        
         self.boardState = boardState  
-        self.players = []
-        self.players.append(player)
+        self.white_player = white_player
         self.move_log = []
         self.last_processed_move = 0
-        self.ready = False
         self.client = client
         self.running = True
+        self.gameState = gameState
         
     def start(self):
         print("Čekam protivnika...")
-        while self.running and not self.ready:
-            self.game = self.client.send(msg="get_game", data=self.name, return_response=True)
+        while self.running and not self.gameState.ready:
+            self.game = self.client.send(msg="get_ready", data=self.gameState.lobbyName, return_response=True)
+            if self.game == True:
+                self.gameState.ready = True
             time.sleep(0.5)
         print("Pronađen je protivnik, igra može započeti.")
         

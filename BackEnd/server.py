@@ -64,6 +64,11 @@ def new_thread(connection):
                     user = database.get_user(username)
                     response = pickle.dumps(user)
                     connection.sendall(response)
+                elif data_request == "get_ready":
+                    game_name = data_request.data
+                    game = database.get_ready(game_name)
+                    response = pickle.dumps(game)
+                    connection.sendall(response)
         except Exception as e:
             print(e)
     connection.close()
@@ -71,7 +76,7 @@ def new_thread(connection):
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-server = "10.0.1.18"
+server = "localhost"
 port = 2701
 
 database_port = 2709
@@ -93,6 +98,6 @@ while True:
         conn, addresponses = s.accept()
         current_total_conn += 1
         print("New connection, curretn connection: ", current_total_conn)
-        thread = Thread(target=new_thread, args=(conn, addresponses))
+        thread = Thread(target=new_thread, args=((conn,)))
         thread.setDaemon(True)
         thread.start()
