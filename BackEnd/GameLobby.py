@@ -16,27 +16,29 @@ class GameState(Persistent):
         self.lobbyName = lobbyName
         self.ready = False
         self.player_name = player_name
+        self.moveLog = boardState.moveLog
 
 
 class GameLobby():
-    def __init__(self, client, gameState, boardState, white_player):
+    def __init__(self, client, boardState, *, white_player):
         
-        self.boardState = boardState  
+        
         self.white_player = white_player
         self.move_log = []
         self.last_processed_move = 0
         self.client = client
         self.running = True
-        self.gameState = gameState
+        self.gameState = boardState
         self.gameOver = False
+        self.boardState = boardState
         
         
     def start(self):
-        print("Čekam protivnika...")
+        print("waiting for the opponent...")
         while self.running and not self.gameState.ready:
             self.gameState = self.client.send(msg="get_game", data=self.gameState.lobbyName, return_response=True)
             time.sleep(0.5)
-        print("Pronađen je protivnik, igra može započeti.")
+        print("Opponent found, Get Ready!.")
         if (self.white_player):
             self.my_turn=True
         else:
@@ -56,13 +58,17 @@ class GameLobby():
        return not self.gameOver
         
     def update_MyGameState(self):
-        self.gameState = self.client.send(msg="get_game", data=self.gameState.lobbyName, return_response=True)
-        
+        if self.gameState.board != self.boardState.board:
+            self.boardState.board = self.gameState.board
         
     def get_GameState(self):
-        self.gameState = self.client.send(msg="get_game", data=self.gameState.lobbyName, return_response=True)
-        self.boardState.board = self.gameState
-        newBoard = self.boardState
-        return newBoard
+        self.boardState = self.client.send(msg="get_game", data=self.gameState.lobbyName, return_response=True)
+    
+    def get_boardState(self):
+        return self.boardState
+    
+    def make_Move(self,move):
+        self.move_log.append(move)
+
         
     
