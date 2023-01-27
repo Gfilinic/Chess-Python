@@ -19,8 +19,8 @@ class Database:
             try:
                 transaction.begin()
                 try:
-                    self.root['lobbies'][boardState.lobbyName] = boardState.board
-                 
+                    self.root['lobbies'][boardState.lobbyName] = boardState
+                   # self.root['lobbies'][boardState.lobbyName].Turn = boardState.moveLog[-1]
                 except Exception as e:
                     print("Error:", str(e))
                 transaction.commit()

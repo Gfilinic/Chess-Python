@@ -118,6 +118,9 @@ class BoardState():
                     self.currentCastlingRights.bKside = False
     
     def checkForPinsAndChecks(self):
+        if  not isinstance(self.board, (list, dict)):
+            self.board = self.board.board
+           
         pins = []
         checks = []
         inCheck = False
@@ -139,7 +142,7 @@ class BoardState():
                 endRow = kingStartRow + d[0] * j
                 endColumn = kingStartColumn +d[1] * j
                 if 0 <= endRow < 8 and 0 <= endColumn < 8:
-                    endPiece = self.board.board[endRow][endColumn]
+                    endPiece = self.board[endRow][endColumn]
                     if endPiece[0] == allyColour and endPiece[1] != 'K':
                         if possiblePin == ():
                             possiblePin = (endRow, endColumn, d[0], d[1])

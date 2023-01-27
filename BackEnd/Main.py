@@ -128,7 +128,7 @@ def checkTheMouseClickAndMakeAMove(boardState, screen, clock):
                 boardState.makeMove(move)
                 #SendMessageToZODB(move)
                 gameLobby.client.send(msg="update_board", data=boardState, return_response=False)
-
+                gameLobby.make_Move(move)
                 
                 animateMove(boardState.moveLog[-1], screen, boardState.board, clock)
                 print(move.getChessNotation())
@@ -171,13 +171,16 @@ def checkEventsAndUpdatetheBoard(active,screen,clock):
                
     else:
         p.time.wait(500) # pause for 500 milliseconds
-        newboardState = gameLobby.get_GameState()
+        gameLobby.get_GameState()
+        gameLobby.update_MyGameState()
+        newgameState = gameLobby.get_boardState()
         
-        if (newboardState.board!=boardState.board):
-            newMove = newboardState.board.moveLog[-1]
-            boardState.makeMove(newMove)
-            animateMove(boardState.moveLog[-1], screen, boardState.board, clock)
-            print(newMove.getChessNotation())
+        if len(newgameState.moveLog) > len(gameLobby.move_log):
+                newMove = newgameState.moveLog[-1]
+                boardState.makeMove(newMove)
+                animateMove(boardState.moveLog[-1], screen, boardState.board, clock)
+                gameLobby.update_MyGameState()
+                print(newMove.getChessNotation())
     
     validMoves = boardState.getValidMoves()
     drawBoard(screen,boardState, validMoves )
@@ -224,7 +227,7 @@ def main(gameLobby):
        
 def create_game(playerName):
     new_lobby = GameState(args.lobby,boardState, playerName)
-    gameLobby = GameLobby(client, new_lobby, boardState, white_player=True)
+    gameLobby = GameLobby(client, new_lobby, white_player=True)
     client.send(msg="insert_new_game", data=new_lobby, return_response=False)
     boardState.defineColour("w")
     return gameLobby
@@ -234,7 +237,7 @@ def create_game(playerName):
 def join_game(lobby, playerName):
         client.send(msg="set_game_ready", data=lobby, return_response=False)
         lobbyToJoin = GameState(lobby, boardState, playerName)
-        gameLobby = GameLobby(client, lobbyToJoin, boardState, white_player=False)
+        gameLobby = GameLobby(client, lobbyToJoin, white_player=False)
         boardState.defineColour("b")
         return gameLobby
  
