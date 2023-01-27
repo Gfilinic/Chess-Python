@@ -6,7 +6,7 @@ from persistent import Persistent
 from ZEO.ClientStorage import ClientStorage
 from persistent.list import PersistentList
 from GameLobby import GameLobby
-
+from client import Client
 
 p.init()
 p.display.set_caption('Chess')
@@ -203,7 +203,10 @@ def animateMove(move, screen, boardState, clock):
         p.display.flip()
         clock.tick(60)
 
-def main(lobby, player, adress, port):
+
+
+
+def main(lobby, player):
    
     print(" lobby, players ", lobby, player)
     screen=setUpScreen()
@@ -217,6 +220,8 @@ def main(lobby, player, adress, port):
 
     
 if __name__=="__main__":
+    global client
+    client = Client()
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("-l", "--lobby", required=True, help="Game lobby name")
@@ -225,8 +230,16 @@ if __name__=="__main__":
     parser.add_argument( "--port", const=True, nargs='?', type=int, help="Port ZEO server", default=2709 )
     args = parser.parse_args()
     
+    global gameLobby
     
-    gameLobby = GameLobby(args.lobby, boardState, args.player, args.adress, args.port)
-        
-    main(args.lobby, args.player, args.adress, args.port)
+    gameLobby = GameLobby(args.lobby, boardState, args.player, client)
+    response = client.send(msg="get_game", data=args.lobby, return_response=True)
+    if response:
+        client.send(msg="set_game_ready", data=args.lobby)
+        print("Uspio si brale!!!")
+    else:
+        client.send(msg="insert_new_game", data=args.lobby, return_response=False)
+        gameLobby.start()
+    
+    main(args.lobby, args.player)
     
