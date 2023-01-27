@@ -7,9 +7,9 @@ from ZEO.ClientStorage import ClientStorage
 from persistent.list import PersistentList
 from GameLobby import GameLobby, GameState
 from client import Client
-
+import time
 p.init()
-p.display.set_caption('Chess')
+
 Icon = p.image.load("BackEnd\Models\icon.png")
 
 p.display.set_icon(Icon)
@@ -22,7 +22,6 @@ Max_FPS=10
 Models={}
 selectedSquare=()
 playerClicks=[]
-boardState=Game.BoardState()
 
 
 def loadModels():
@@ -123,13 +122,11 @@ def checkTheMouseClickAndMakeAMove(boardState, screen, clock):
                 move = validMoves[i]
         
         if move in validMoves:
-            global gameLobby
-            gameLobby.sendMoveToServer(move)
+            
+            #gameLobby.sendMoveToServer(move)
             boardState.makeMove(move)
             #SendMessageToZODB(move)
-            
-            boardState.whiteTurn = not boardState.whiteTurn
-           
+            gameLobby.update_MyGameState()
             
             animateMove(boardState.moveLog[-1], screen, boardState.board, clock)
             print(move.getChessNotation())
@@ -161,27 +158,24 @@ def checkForGameOver(boardState, screen):
 
 def checkEventsAndUpdatetheBoard(active,screen,clock):
     global boardState
-    for e in p.event.get():
-        if e.type==p.QUIT:
-            active=False
-            return active
-        elif e.type == p.MOUSEBUTTONDOWN:
-            checkTheMouseClickAndMakeAMove(boardState,screen,clock)
-        elif e.type == p.KEYDOWN:
-            if e.key == p.K_z:
-                boardState.undoMove()
-            elif e.key == p.K_r:
-                boardState = Game.BoardState()
-                selectedSquare = ()
-                playerClicks=[]
-                
-    
+    if (gameLobby.checkTurn()):
+        for e in p.event.get():
+            if e.type==p.QUIT:
+                active=False
+                return active
+            elif e.type == p.MOUSEBUTTONDOWN:
+                checkTheMouseClickAndMakeAMove(boardState,screen,clock)
+               
+    else:
+        gameLobby.get_GameState()
+        
+        
     validMoves = boardState.getValidMoves()
     drawBoard(screen,boardState, validMoves )
     checkForGameOver(boardState, screen)
     clock.tick(Max_FPS)
     p.display.flip()
-    
+
 
 def animateMove(move, screen, boardState, clock):
     global colors
@@ -206,28 +200,30 @@ def animateMove(move, screen, boardState, clock):
 
 
 
-def main(lobby, player):
-   
-    print(" lobby, players ", lobby, player)
+def main(gameLobby):
+    gameLobby.start()
     screen=setUpScreen()
     clock=p.time.Clock()
     loadModels()
     active=True
     while active:
+        active = gameLobby.checkIfGameActive()
         checkEventsAndUpdatetheBoard(active,screen,clock)
 
-def create_game(lobbyName, playerName):
-    client.send(msg="insert_new_game", data=lobbyName, return_response=False)
+def create_game(playerName):
     new_lobby = GameState(args.lobby,boardState, playerName)
     gameLobby = GameLobby(client, new_lobby, boardState, white_player=True)
-    gameLobby.start()
+    client.send(msg="insert_new_game", data=new_lobby, return_response=False)
+    return gameLobby
+   
     
     
-def join_game(game, playerName):
-        client.send(msg="set_game_ready", data=game, return_response=False)
-        lobbyToJoin = GameState(client, game, playerName)
+def join_game(lobby, playerName):
+        client.send(msg="set_game_ready", data=lobby, return_response=False)
+        lobbyToJoin = GameState(lobby, boardState, playerName)
         gameLobby = GameLobby(client, lobbyToJoin, boardState, white_player=False)
-        gameLobby.start()
+        return gameLobby
+ 
         
     
 if __name__=="__main__":
@@ -240,18 +236,20 @@ if __name__=="__main__":
     parser.add_argument( "-a", "--adress", const=True, nargs='?', type=str, help="Adress of the ZEO server.", default="localhost" )
     parser.add_argument( "--port", const=True, nargs='?', type=int, help="Port ZEO server", default=2709 )
     args = parser.parse_args()
+    global boardState
+    boardState=Game.BoardState(args.lobby)
+    p.display.set_caption("Lobby: " + args.lobby + " | Player: " + args.player)
     
-    global gameLobby
     
    
     response = client.send(msg="get_game", data=args.lobby, return_response=True)
     if response:
-        join_game(args.lobby, args.player)
-        main(args.lobby, args.player)
+        gameLobby = join_game(args.lobby, args.player)
+        main(gameLobby)
         
         
     else:
-        create_game(args.lobby, args.player)
-        main(args.lobby, args.player)
+        gameLobby = create_game(args.player)
+        main(gameLobby)
     
     

@@ -11,38 +11,15 @@ class Database:
         db = DBConnection(database_name=database_name, address=address, port=port)
         self.db_connection, self.root = db.create_connection()
 
-    def username_exists(self, username):
-        try:
-            exists = len([user for user in self.root['users'] if user.username == username]) > 0
-            return exists
-        except KeyError:
-            self.root['users'] = PersistentList()
-            return False
-
-    def user_exists(self, login_user):
-        try:
-            user_exists = len([user for user in self.root['users'] if
-                        user.username == login_user.username and user.password == login_user.password]) > 0
-            return user_exists
-        except KeyError:
-            self.root['users'] = PersistentList()
-            return False
-
-    def register_user(self, user):
-        transaction.begin()
-        try:
-            self.root['users'].extend([user])
-        except KeyError:
-            self.root['users'] = PersistentList()
-            self.root['users'].extend([user])
-        transaction.commit()
-
+    
+    
+    
     def update_board(self, boardState):
         while True:
             try:
                 transaction.begin()
                 try:
-                    self.root['lobbies'][boardState.game_name].board = boardState.board
+                    self.root['lobbies'][boardState.lobbyName].board = boardState.board
                 except Exception as e:
                     print("Error:", str(e))
                 transaction.commit()
@@ -59,10 +36,10 @@ class Database:
             self.root['lobbies'][gameLobby] = gameLobby
         except KeyError:
             self.root['lobbies'] = PersistentDict()
-            self.root['lobbies'][gameLobby] = gameLobby
+            self.root['lobbies'][gameLobby.lobbyName] = gameLobby
         transaction.commit()
-
-    def get_user(self, username):
+      
+    def get_player(self, username):
         try:
             user = [user for user in self.root['users'] if user.username == username][0]
             return user

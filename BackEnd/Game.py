@@ -1,5 +1,5 @@
 class BoardState():
-    def __init__(self):
+    def __init__(self, lobbyName):
         self.board=[
             ['bR','bN','bB','bQ','bK','bB','bN','bR'],
             ['bP','bP','bP','bP','bP','bP','bP','bP'],
@@ -13,6 +13,7 @@ class BoardState():
         self.moveFunctions = {'P':self.getPawnMoves,'R':self.getRookMoves, 'N':self.getKnightMoves, 
                               'B':self.getBishopMoves, 'Q':self.getQueenMoves, 'K':self.getKingMoves}
         self.whiteTurn = True
+        self.lobbyName = lobbyName
         self.moveLog = []
         self.whiteKingLocation = (7, 4)
         self.blackKingLocation = (0, 4)
